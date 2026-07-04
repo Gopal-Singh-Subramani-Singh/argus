@@ -1,0 +1,64 @@
+rules:
+  - name: "ks_test_critical"
+    method: "ks_test"
+    threshold: 0.05
+    operator: "lt"
+    severity: "critical"
+    window_hours: 24
+    description: "KS test p-value below 0.05 — significant distribution shift"
+    retraining_trigger: true
+
+  - name: "ks_test_warning"
+    method: "ks_test"
+    threshold: 0.1
+    operator: "lt"
+    severity: "warning"
+    window_hours: 24
+    description: "KS test p-value below 0.1 — moderate distribution shift"
+    retraining_trigger: false
+
+  - name: "psi_critical"
+    method: "psi"
+    threshold: 0.25
+    operator: "gt"
+    severity: "critical"
+    window_hours: 24
+    description: "PSI > 0.25 — population has shifted significantly"
+    retraining_trigger: true
+
+  - name: "psi_warning"
+    method: "psi"
+    threshold: 0.1
+    operator: "gt"
+    severity: "warning"
+    window_hours: 24
+    description: "PSI > 0.1 — moderate population shift"
+    retraining_trigger: false
+
+  - name: "js_divergence_warning"
+    method: "js_divergence"
+    threshold: 0.1
+    operator: "gt"
+    severity: "warning"
+    window_hours: 24
+    description: "JS divergence > 0.1 — distribution diverging from reference"
+    retraining_trigger: false
+
+  - name: "shap_drift_critical"
+    method: "shap_drift"
+    threshold: 0.7
+    operator: "lt"
+    severity: "critical"
+    window_hours: 24
+    description: "SHAP rank correlation < 0.7 — feature importance has shifted"
+    retraining_trigger: true
+
+webhooks:
+  - name: "local_logger"
+    url: "http://localhost:8001/internal/alert-received"
+    enabled: true
+
+  - name: "retraining_trigger"
+    url: "http://localhost:8001/internal/retrain-triggered"
+    enabled: true
+    trigger_on_severity: ["critical"]

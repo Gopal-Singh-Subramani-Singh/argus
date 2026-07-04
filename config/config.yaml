@@ -1,0 +1,42 @@
+server:
+  host: "0.0.0.0"
+  port: 8001
+
+timescaledb:
+  host: "timescaledb"
+  port: 5432
+  min_pool: 2
+  max_pool: 10
+  # Credentials injected from environment variables:
+  # POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+
+redis:
+  url: "redis://redis:6379"
+  # Password injected from REDIS_PASSWORD environment variable
+  stream_key: "argus:ingest:stream"
+  consumer_group: "argus:consumers"
+  consumer_name: "worker-1"
+  batch_size: 100
+  block_ms: 1000
+
+drift:
+  schedule_interval_seconds: 300
+  reference_window_days: 30
+  production_window_hours: 24
+  min_samples: 10
+  methods:
+    - "ks_test"
+    - "psi"
+    - "chi_squared"
+    - "js_divergence"
+    - "shap_drift"
+
+alerts:
+  rules_file: "config/alert_rules.yaml"
+  webhook_timeout_seconds: 10
+  webhook_max_retries: 3
+  webhook_retry_wait_seconds: 2.0
+
+duckdb:
+  db_path: ":memory:"
+  history_days: 30
