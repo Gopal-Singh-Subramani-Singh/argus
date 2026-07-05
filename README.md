@@ -18,29 +18,30 @@ Model accuracy degrades silently in production. Input distributions shift. Upstr
 
 ## Architecture
 
-```
-SDK (argus.log / argus.init)
-    │
-    ▼
-FastAPI /ingest ──────────► /ingest/batch
-    │
-    ▼
-Redis Streams ──► StreamConsumer ──► TimescaleDB (time-series store)
-                                         │
-                                         ▼
-                               DriftEngine (APScheduler)
-                                    │    │    │    │    │
-                                   KS   PSI  Chi  JSD  SHAP*
-                                         │
-                                         ▼
-                               AlertEngine (YAML rules)
-                                         │
-                                    ┌────┴────┐
-                                    │         │
-                               Webhooks  Retraining Trigger
-                                         │
-                                         ▼
-                               Prometheus Gauges ──► Grafana
+```mermaid
+flowchart TD
+    SDK([SDK\nargus.init / argus.log]) --> API[FastAPI\n/ingest · /ingest/batch]
+    API --> RS[(Redis Streams\nat-least-once delivery)]
+    RS --> SC[StreamConsumer\nconsumer groups]
+    SC --> TSDB[(TimescaleDB\ntime-series store)]
+
+    TSDB --> DE[DriftEngine\nAPScheduler]
+    DE --> KS[KS Test]
+    DE --> PSI[PSI]
+    DE --> CHI[Chi-squared]
+    DE --> JSD[JS Divergence]
+    DE --> SHAP[SHAP Drift*]
+
+    KS & PSI & CHI & JSD & SHAP --> AE[AlertEngine\nYAML rules]
+    AE --> WH[Webhooks]
+    AE --> RT[Retraining Trigger]
+    AE --> PROM[Prometheus Gauges\n──► Grafana Dashboard]
+
+    TSDB --> DUCK[(DuckDB\n30-day analytics API)]
+
+    style SDK fill:#4A90D9,color:#fff
+    style DE fill:#7B68EE,color:#fff
+    style PROM fill:#2E8B57,color:#fff
 ```
 
 *SHAP drift: implemented; verify completeness before claiming in production demos.
