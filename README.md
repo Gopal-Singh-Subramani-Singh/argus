@@ -1,24 +1,59 @@
-# Argus — ML Observability & Drift Detection Platform
+<p align="center">
+  <img src="docs/argus.png" alt="Argus Logo" width="180">
+</p>
 
-Production-grade drift detection for deployed ML models. Built for Apple Silicon. $0 budget. Fully local.
+<h1 align="center">Argus</h1>
+
+<p align="center">
+  <strong>ML Observability & Drift Detection Platform</strong>
+</p>
+
+<p align="center">
+  Local-first model monitoring platform for prediction logging, drift detection,
+  alerting, Prometheus metrics, and Grafana dashboards.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11-blue" alt="Python">
+  <img src="https://img.shields.io/badge/FastAPI-REST%20API-green" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Redis-Streams-red" alt="Redis Streams">
+  <img src="https://img.shields.io/badge/TimescaleDB-Time--Series-purple" alt="TimescaleDB">
+  <img src="https://img.shields.io/badge/Observability-Prometheus%20%2B%20Grafana-orange" alt="Observability">
+</p>
 
 ---
 
-## What it does
+## Overview
 
-Argus ingests feature vectors and predictions from deployed ML models, detects distributional shifts using statistical tests, fires alerts when thresholds breach, and exposes drift metrics to Prometheus and Grafana. It functions as the observability layer for any ML system producing predictions.
+**Argus** is a local-first ML observability platform for deployed models.
+
+It ingests feature vectors and predictions, stores prediction events, computes distribution drift against a reference baseline, fires configurable alerts, and exposes monitoring metrics through Prometheus and Grafana.
+
+Argus is designed as the observability layer for ML systems that need to detect silent degradation before it reaches users or downstream business metrics.
 
 ---
 
-## Why it matters
+## Why It Matters
 
-Model accuracy degrades silently in production. Input distributions shift. Upstream data pipelines change. Without monitoring, you discover degradation through user complaints or business metrics — too late. Argus implements the same drift detection pattern used in production ML monitoring platforms: event ingestion, statistical testing against a reference distribution, alert rules, and dashboard observability.
+Model degradation often happens silently. Input distributions shift, upstream data pipelines change, categorical values drift, and model assumptions become stale.
+
+Without monitoring, teams usually discover the issue through user complaints, manual investigation, or degraded business metrics.
+
+Argus implements the core production monitoring pattern:
+
+* prediction event ingestion
+* reference distribution management
+* statistical drift computation
+* alert rules
+* retraining triggers
+* time-series observability
+* dashboard monitoring
 
 ---
 
 ## Architecture
 
-```mermaid
+```mermaid id="4d6x5v"
 flowchart TD
     SDK([SDK\nargus.init / argus.log]) --> API[FastAPI\n/ingest · /ingest/batch]
     API --> RS[(Redis Streams\nat-least-once delivery)]
@@ -35,7 +70,7 @@ flowchart TD
     KS & PSI & CHI & JSD & SHAP --> AE[AlertEngine\nYAML rules]
     AE --> WH[Webhooks]
     AE --> RT[Retraining Trigger]
-    AE --> PROM[Prometheus Gauges\n──► Grafana Dashboard]
+    AE --> PROM[Prometheus Gauges\nGrafana dashboard]
 
     TSDB --> DUCK[(DuckDB\n30-day analytics API)]
 
@@ -44,31 +79,43 @@ flowchart TD
     style PROM fill:#2E8B57,color:#fff
 ```
 
-*SHAP drift: implemented; verify completeness before claiming in production demos.
+*SHAP drift support is included as an experimental path. Verify implementation completeness before presenting it as a fully tested production feature.
 
 ---
 
 ## Features
 
-- **REST ingestion API**: single and batch prediction logging (`/ingest`, `/ingest/batch`)
-- **5 drift detection methods**: KS test, PSI (Population Stability Index), Chi-squared, Jensen-Shannon divergence, SHAP feature importance drift
-- **Redis Streams ingestion pipeline**: non-blocking SDK, at-least-once delivery, consumer groups
-- **TimescaleDB time-series storage**: drift scores stored with timestamps for trend analysis
-- **DuckDB analytics API**: 30-day drift history queries without TimescaleDB
-- **YAML alert rules**: configurable thresholds per method, per feature, per model
-- **Alert actions**: webhook calls and retraining trigger signals
-- **Baseline comparison**: reference distribution set via API; drift computed against it
-- **Python SDK**: `argus.init()` / `argus.log()` — one-line integration
-- **Prometheus metrics**: 6 drift metrics exposed for Grafana dashboards
-- **Grafana dashboards**: pre-configured drift monitoring dashboard
+* **Prediction ingestion API** for single and batch events
+* **Python SDK** with `argus.init()` and `argus.log()`
+* **Redis Streams pipeline** with consumer groups and at-least-once delivery
+* **TimescaleDB storage** for timestamped drift scores and trend analysis
+* **DuckDB analytics path** for local 30-day historical queries
+* **Reference distribution management** through API
+* **Drift detection methods** including KS test, PSI, Chi-squared, JS divergence, and experimental SHAP drift
+* **YAML alert rules** with configurable thresholds, operators, and severities
+* **Alert actions** through webhooks and retraining trigger signals
+* **Prometheus metrics** for drift score, severity, alerts, ingestion, stream lag, and uptime
+* **Grafana dashboard** for model monitoring
 
-> **Note on SHAP drift**: SHAP-based feature importance drift is listed as a supported method. Verify implementation completeness in `argus_core/drift/shap_drift.py` before presenting it as a complete feature in interviews. KS, PSI, Chi-squared, and JS divergence are fully implemented and tested.
+> **Note on SHAP drift:** KS test, PSI, Chi-squared, and JS divergence are the strongest methods to present in demos. Treat SHAP drift as experimental unless you have verified `argus_core/drift/shap_drift.py` and its tests.
 
 ---
 
 ## Tech Stack
 
-Python · FastAPI · Redis Streams · TimescaleDB · DuckDB · APScheduler · Prometheus · Grafana · Docker · SciPy · SHAP
+| Area                | Tools                           |
+| ------------------- | ------------------------------- |
+| API                 | FastAPI                         |
+| SDK                 | Python client                   |
+| Stream Queue        | Redis Streams                   |
+| Time-Series Storage | TimescaleDB                     |
+| Analytics           | DuckDB                          |
+| Scheduling          | APScheduler                     |
+| Drift Methods       | SciPy, PSI, JS divergence, SHAP |
+| Alerts              | YAML rules, webhooks            |
+| Metrics             | Prometheus                      |
+| Dashboard           | Grafana                         |
+| Runtime             | Docker, Docker Compose          |
 
 ---
 
@@ -76,82 +123,84 @@ Python · FastAPI · Redis Streams · TimescaleDB · DuckDB · APScheduler · Pr
 
 ### 1. Install dependencies
 
-```bash
+```bash id="3plwry"
 cd argus
 pip install -r requirements.txt
 ```
 
 ### 2. Start infrastructure
 
-```bash
-cd argus
+```bash id="8w90ne"
 docker compose up timescaledb redis prometheus grafana -d
 ```
 
 ### 3. Start Argus
 
-```bash
-cd argus
+```bash id="s6i3p9"
 uvicorn argus_core.main:app --port 8001 --reload
 ```
 
 ### 4. Run tests
 
-```bash
-cd argus
+```bash id="273tkk"
 pytest tests/ -v
 ```
 
 ### 5. Run the synthetic drift demo
 
-```bash
-cd argus
+```bash id="e6be0d"
 python demo/synthetic_drift_demo.py
 ```
 
-### Full Docker stack
+### 6. Run the full Docker stack
 
-```bash
-cd argus
+```bash id="twqiz5"
 docker compose up --build
 ```
 
 ---
 
-## API / CLI Usage
+## SDK Usage
 
-### SDK usage
-
-```python
+```python id="ojf7cg"
 import sdk as argus
 
 argus.init(endpoint="http://localhost:8001", model_id="my_model")
 
-# In your prediction loop:
 prediction = model.predict(features)
-argus.log(features=features, prediction=prediction, label=actual)
+
+argus.log(
+    features=features,
+    prediction=prediction,
+    label=actual,
+)
 ```
 
-### API Endpoints
+---
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/models` | POST | Register a model and define features |
-| `/models/{id}/reference` | POST | Set reference distribution for drift baseline |
-| `/models` | GET | List all registered models |
-| `/models/{id}` | GET | Get model details |
-| `/ingest` | POST | Log a single prediction |
-| `/ingest/batch` | POST | Log a batch of predictions |
-| `/drift/{id}/run` | POST | Trigger drift computation immediately |
-| `/drift/{id}/latest` | GET | Get latest drift scores |
-| `/health` | GET | Health check |
-| `/metrics` | GET | Prometheus metrics |
-| `/docs` | GET | Swagger interactive API docs |
+## API Endpoints
 
-### Example: Register a model and ingest predictions
+| Method | Endpoint                 | Description                                   |
+| ------ | ------------------------ | --------------------------------------------- |
+| POST   | `/models`                | Register a model and define features          |
+| POST   | `/models/{id}/reference` | Set reference distribution for drift baseline |
+| GET    | `/models`                | List registered models                        |
+| GET    | `/models/{id}`           | Get model details                             |
+| POST   | `/ingest`                | Log a single prediction                       |
+| POST   | `/ingest/batch`          | Log prediction events in batch                |
+| POST   | `/drift/{id}/run`        | Trigger drift computation immediately         |
+| GET    | `/drift/{id}/latest`     | Get latest drift scores                       |
+| GET    | `/health`                | Health check                                  |
+| GET    | `/metrics`               | Prometheus metrics                            |
+| GET    | `/docs`                  | Swagger interactive API docs                  |
 
-```bash
-# Register a model
+---
+
+## Example Usage
+
+### Register a model
+
+```bash id="gwii79"
 curl -X POST http://localhost:8001/models \
   -H "Content-Type: application/json" \
   -d '{
@@ -163,8 +212,11 @@ curl -X POST http://localhost:8001/models \
       {"name": "merchant_type", "type": "categorical"}
     ]
   }'
+```
 
-# Ingest a prediction
+### Ingest a prediction
+
+```bash id="82nu1n"
 curl -X POST http://localhost:8001/ingest \
   -H "Content-Type: application/json" \
   -d '{
@@ -172,15 +224,27 @@ curl -X POST http://localhost:8001/ingest \
     "features": {"amount": 150.0, "merchant_type": "retail"},
     "prediction": 0
   }'
+```
 
-# Check drift scores
+### Trigger drift computation
+
+```bash id="6ynot2"
+curl -X POST http://localhost:8001/drift/fraud_v1/run
+```
+
+### View latest drift scores
+
+```bash id="6p7qfu"
 curl http://localhost:8001/drift/fraud_v1/latest | python -m json.tool
 ```
 
-### Alert rule configuration
+---
 
-```yaml
-# config/alert_rules.yaml
+## Alert Rules
+
+Example `config/alert_rules.yaml`:
+
+```yaml id="kfzmk9"
 rules:
   - name: "psi_critical"
     method: "psi"
@@ -196,113 +260,159 @@ rules:
     severity: "warning"
 ```
 
-Supported operators: `lt`, `gt`, `lte`, `gte`
-Supported methods: `ks_test`, `psi`, `chi_squared`, `js_divergence`, `shap_drift`
+Supported operators:
 
----
-
-## Tests
-
-```bash
-# Run all tests (no Redis or TimescaleDB needed — all mocked)
-pytest tests/ -v
-
-# With coverage
-pytest tests/ -v --cov=argus_core
+```text id="z3u0gm"
+lt, gt, lte, gte
 ```
 
-30+ tests covering: model registration, ingestion, drift computation (all 5 methods), alert engine, SDK, API endpoints.
+Supported methods:
+
+```text id="1ur68m"
+ks_test, psi, chi_squared, js_divergence, shap_drift
+```
 
 ---
 
 ## Observability
 
-### Prometheus metrics (at `/metrics`)
+Argus exposes Prometheus metrics at:
 
-| Metric | Description |
-|--------|-------------|
-| `argus_drift_score{model_id, feature_name, method}` | Drift score per feature per method |
-| `argus_drift_severity{model_id, feature_name}` | Severity level (0=OK, 1=INFO, 2=WARNING, 3=CRITICAL) |
-| `argus_alerts_fired_total{model_id, severity, method}` | Alert fire count |
-| `argus_ingest_total{model_id, status}` | Ingestion request count |
-| `argus_stream_consumer_lag` | Redis Streams consumer lag |
-| `argus_uptime_seconds` | Server uptime |
+```text id="opz8i8"
+http://localhost:8001/metrics
+```
 
-### Drift severity thresholds
+Grafana:
 
-| Method | OK | INFO | WARNING | CRITICAL |
-|---|---|---|---|---|
-| KS test (p-value) | >0.2 | 0.1–0.2 | 0.05–0.1 | <0.05 |
-| PSI | <0.05 | 0.05–0.1 | 0.1–0.25 | >0.25 |
-| JS Divergence | <0.05 | 0.05–0.1 | 0.1–0.3 | >0.3 |
-| SHAP rank corr | >0.85 | 0.7–0.85 | 0.5–0.7 | <0.5 |
-| Chi-squared (p-value) | >0.1 | — | 0.05–0.1 | <0.05 |
+```text id="5a3751"
+http://localhost:3000
+```
 
-### Grafana
+Default login:
 
-- URL: http://localhost:3000
-- Login: admin / argus
-- Dashboard: `dashboards/argus_grafana.json`
+```text id="77f350"
+admin / argus
+```
+
+Dashboard file:
+
+```text id="tspxe7"
+dashboards/argus_grafana.json
+```
+
+### Prometheus Metrics
+
+| Metric                                                 | Description                        |
+| ------------------------------------------------------ | ---------------------------------- |
+| `argus_drift_score{model_id, feature_name, method}`    | Drift score per feature and method |
+| `argus_drift_severity{model_id, feature_name}`         | Severity level from OK to critical |
+| `argus_alerts_fired_total{model_id, severity, method}` | Alert fire count                   |
+| `argus_ingest_total{model_id, status}`                 | Ingestion request count            |
+| `argus_stream_consumer_lag`                            | Redis Streams consumer lag         |
+| `argus_uptime_seconds`                                 | Server uptime                      |
+
+### Drift Severity Thresholds
+
+| Method                | OK     | Info     | Warning  | Critical |
+| --------------------- | ------ | -------- | -------- | -------- |
+| KS test p-value       | > 0.2  | 0.1–0.2  | 0.05–0.1 | < 0.05   |
+| PSI                   | < 0.05 | 0.05–0.1 | 0.1–0.25 | > 0.25   |
+| JS Divergence         | < 0.05 | 0.05–0.1 | 0.1–0.3  | > 0.3    |
+| SHAP rank correlation | > 0.85 | 0.7–0.85 | 0.5–0.7  | < 0.5    |
+| Chi-squared p-value   | > 0.1  | —        | 0.05–0.1 | < 0.05   |
 
 ---
 
 ## Demo
 
-```bash
-# Navigate to argus directory
-cd argus
-
-# Start Argus
-uvicorn argus_core.main:app --port 8001 --reload
-
-# Run synthetic drift simulation (auto-registers model, ingests data, triggers drift)
+```bash id="fv9p62"
 python demo/synthetic_drift_demo.py
+```
 
-# Expected: drift scores appear in Grafana, alerts fire when PSI > 0.25
+The demo flow:
 
-# Manually trigger drift computation
+```text id="lmxt7r"
+Registers a model
+Sets a reference distribution
+Ingests synthetic prediction events
+Introduces distribution shift
+Runs drift detection
+Surfaces drift scores and alerts
+```
+
+Manual drift run:
+
+```bash id="f2ksso"
 curl -X POST http://localhost:8001/drift/fraud_v1/run
-
-# View latest drift scores
 curl http://localhost:8001/drift/fraud_v1/latest | python -m json.tool
 ```
 
 ---
 
+## Screenshots
+
+![](docs/Picture1.png)
+
+![](docs/Picture2.png)
+
+![](docs/Picture3.png)
+
+![](docs/Picture4.png)
+
+![](docs/Picture5.png)
+
+![](docs/Picture6.png)
+
+![](docs/Picture7.png)
+
+![](docs/Picture8.png)
+
+![](docs/Picture9.png)
+
+![](docs/Picture10.png)
+
+![](docs/Picture11.png)
+
+![](docs/Picture12.png)
+
+![](docs/Picture13.png)
+
+![](docs/Picture14.png)
+
+---
+
+## Tests
+
+```bash id="m2w0v3"
+pytest tests/ -v
+```
+
+With coverage:
+
+```bash id="e8xiqb"
+pytest tests/ -v --cov=argus_core
+```
+
+The test suite covers model registration, ingestion, drift computation, alert rules, SDK behavior, and API endpoints.
+
+---
+
 ## Known Limitations
 
-- **TimescaleDB dependency**: Argus requires TimescaleDB (PostgreSQL extension) for time-series drift score storage. This is a heavier dependency than most other AI Hive projects. DuckDB analytics API provides an alternative for offline analysis.
-- **SHAP drift completeness**: SHAP-based drift is listed as a supported method. Verify implementation completeness before presenting as a fully tested feature.
-- **No real-time alerting**: Alert evaluation runs on a schedule (APScheduler). It is not sub-second. Alert latency depends on the configured evaluation interval.
-- **Single-tenant**: Argus does not separate data between teams or users. All models share the same backend.
-- **No alert deduplication**: Repeated threshold breaches fire repeated alerts. Add deduplication logic before connecting to PagerDuty or Slack.
-- **Reference distribution required**: Drift scores are meaningless without a reference distribution. You must call `/models/{id}/reference` before drift detection produces results.
+* **TimescaleDB dependency**: Argus uses TimescaleDB for time-series drift score storage, making it heavier than the DuckDB-only projects.
+* **SHAP drift is experimental**: Verify implementation completeness before presenting it as fully tested.
+* **Scheduled alert evaluation**: Alerts run on APScheduler intervals rather than sub-second streaming evaluation.
+* **Single-tenant design**: Models share the same backend without team-level isolation.
+* **No alert deduplication**: Repeated breaches may fire repeated alerts.
+* **Reference distribution required**: Drift scores are only meaningful after a reference baseline has been set.
 
 ---
 
 ## Future Work
 
-- Add alert deduplication and notification channels (Slack, PagerDuty)
-- Replace TimescaleDB with DuckDB for a lighter deployment (single-container)
-- Add online drift monitoring (streaming detection, not just batch)
-- Add data quality checks (null rates, type mismatches)
-- Multi-tenant model registry with API key auth
-
----
-
-##Screenshots
-![](docs/Picture1.png)
-![](docs/Picture2.png)
-![](docs/Picture3.png)
-![](docs/Picture4.png)
-![](docs/Picture5.png)
-![](docs/Picture6.png)
-![](docs/Picture7.png)
-![](docs/Picture8.png)
-![](docs/Picture9.png)
-![](docs/Picture10.png)
-![](docs/Picture11.png)
-![](docs/Picture12.png)
-![](docs/Picture13.png)
-![](docs/Picture14.png)
-
+* Alert deduplication
+* Slack and PagerDuty notification integrations
+* DuckDB-first lightweight deployment mode
+* Streaming drift detection
+* Data quality checks for null rates and type mismatches
+* Multi-tenant model registry with API key authentication
