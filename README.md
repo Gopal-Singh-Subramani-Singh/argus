@@ -293,3 +293,20 @@ curl http://localhost:8001/drift/fraud_v1/latest | python -m json.tool
 ## Resume Bullet
 
 > Built an ML observability platform for monitoring model health and feature drift using statistical drift tests (KS, PSI, JS divergence), event-driven ingestion via Redis Streams, historical analytics, and Prometheus/Grafana dashboards.
+
+##Screenshots
+![](docs/Picture1.png)
+![](docs/Picture2.png)
+![](docs/Picture3.png)
+![](docs/Picture4.png)
+![](docs/Picture5.png)
+![](docs/Picture6.png)
+![](docs/Picture7.png)
+![](docs/Picture8.png)
+![](docs/Picture9.png)
+![](docs/Picture10.png)
+![](docs/Picture11.png)
+![](docs/Picture12.png)
+![](docs/Picture13.png)
+![](docs/Picture14.png)
+
